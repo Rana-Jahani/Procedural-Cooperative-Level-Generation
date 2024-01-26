@@ -43,3 +43,18 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Platform
+    uniqueID: 1650720401
+    locked: 0
+  - name: Gap
+    uniqueID: 1196160461
+    locked: 0
+  - name: Puzzle Piece
+    uniqueID: 4226772313
+    locked: 0
+  - name: Magnet
+    uniqueID: 708772609
+    locked: 0
+  - name: Player
+    uniqueID: 1358884159
+    locked: 0

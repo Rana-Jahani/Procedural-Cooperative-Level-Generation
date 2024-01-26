@@ -6,14 +6,16 @@ using UnityEngine.SceneManagement;
 
 public class LevelGeneration : MonoBehaviour
 {
+    //The 4 central squares on the scene are starting positions.
+    [SerializeField] Transform[] startingPositions; 
+    
 
-    [SerializeField] Transform[] startingPositions;
-
+    // Different types of rooms with specific openings has created as prefabs and added to the rooms array attached to the Level Generator gameobject.
     [SerializeField] GameObject[] rooms; 
-    //index 0 --> R 
-    //index 1 --> L
-    //index 2 --> T
-    //index 3 --> B
+    //index 0 --> R (Rigt openning) 
+    //index 1 --> L (Left Openning)
+    //index 2 --> T (Top Openning)
+    //index 3 --> B (Bottom Openning)
     //index 4 --> LR
     //index 5 --> LB
     //index 6 --> LT
@@ -21,57 +23,39 @@ public class LevelGeneration : MonoBehaviour
     //index 8 --> RT
     //index 9 --> TB
 
-    /*
-    private int[] oneOpeningRooms = { 0, 1, 2, 3 }; // rooms with index 0,1,2,3 have only one opening
-    private int[] rightOpeningRooms = { 4, 7, 8 }; // rooms with index 4, 7, 8 have right opening
-    private int[] leftOpeningRooms = { 4, 5, 6 }; // rooms with index 4,5,6 have left opening
-    private int[] topOpeningRooms = { 6, 8, 9 }; // rooms with index 6,8,9 have top opening
-    private int[] bottomOpeningRooms = { 5, 7, 9 }; // rooms with index 5,7,9 have bottom opening
-    */
 
-    private int direction;
-    private string directionStr,directionCommandStr;
-    // direction = 1 or 2 --> move right
-    // direction = 3 or 4 --> move left
-    // direction = 5 or 6 --> move up
-    // direction = 7 or 8 --> move down
+    private int direction; // Four directions of 1: right, 2: left, 3: up, 4: down
+    private string directionStr,directionCommandStr; //debugging purposes
+
 
     public bool stopGeneration;
 
     private int roomCounter = 0;
 
     [SerializeField] float moveAmount;
-    private float timeBtwSpawn;
+    private float timeBtwSpawn; //to be able to see and track the room generation on the scene 
     [SerializeField] float startTimeBtwSpawn;
 
-    //Boundries
-    //public float minX = -5;
-    //public float maxX = 65;
-    //public float minY = -65;
-    //public float maxY = 5;
 
-    public List<Vector2> roomPositionsList = new List<Vector2>();
-    public List<string> directionList = new List<string>();
-    public List<GameObject> spawnedRoomsList;
+    public List<Vector2> roomPositionsList = new List<Vector2>(); //list of visited room positions
+    public List<string> directionList = new List<string>(); //debugging purposes
+    public List<GameObject> spawnedRoomsList; //debugging purposes
 
-    private Vector2 nextPos;
-
+    private Vector2 nextPos; //this is a temporary variable for the level generator to check the next available position before updating the its position for the new room 
     [SerializeField] LayerMask whatIsRoom;
-
 
     private void Start()
     {
+    
         // instantiate the first room randomly from the 4 possible starting possitions + use a room with only 1 opening
         int randStartingPos = Random.Range(0, startingPositions.Length);
         transform.position = startingPositions[randStartingPos].position;
 
-        direction = 1;//PLEASE CHANGE THIS LATER
-        directionStr = "Right"; //PLEASE CHANGE THIS LATER
+        direction = 1;// CHANGE THIS LATER
+        directionStr = "Right"; // CHANGE THIS LATER
         directionCommandStr = "Move "+ directionStr;
         Debug.Log(directionCommandStr);
         directionList.Add(directionStr);
-
-        //direction = Random.Range(1, 9);
     }
 
     private void Update()
@@ -80,11 +64,11 @@ public class LevelGeneration : MonoBehaviour
         {
             if (roomCounter < 10)
             {
-                Move();
-                direction = Random.Range(1, 5);
+                GenerateLevel();
                 timeBtwSpawn = startTimeBtwSpawn;
             }
-            else{
+            else
+            {
                 stopGeneration = true;
             }
         }
@@ -92,24 +76,18 @@ public class LevelGeneration : MonoBehaviour
             timeBtwSpawn -= Time.deltaTime;
         }
     }
-
-
-    public void Move()
+    
+    public void GenerateLevel()
     {
-        //
-
-        if (direction == 1) // Move Right!
-        {
-            // Move Right!
-            nextPos = new Vector2(transform.position.x + moveAmount, transform.position.y);
-            directionStr = "Right";
+            // Move!
+            MoveDirection();
 
             // Check the roomsPositionList for not cutting the path
             nextPos = this.CheckRoomPosition(nextPos);
             directionCommandStr = "Move "+ directionStr;
 
-            //INSTANTIATE THE ROOME HERE BASED ON THE DIRECTION_LIST.COUNT-1 AND DIRECTION_STR
-            RoomGeneration();
+            //Imstantiate a room based on the previous amd current directions
+            GenerateRoom();
             
             //Update the LevelGenerator's position
             transform.position = nextPos;
@@ -118,177 +96,106 @@ public class LevelGeneration : MonoBehaviour
 
             // Adding the instantiated room to the list of room position coordinates
             roomPositionsList.Add(nextPos);
+
+            roomCounter++;
+
+    }
+    private void MoveDirection()
+    {
+        direction = Random.Range(1, 5);
+        if (direction == 1) // Move Right!
+        {
+            // Move Right!
+            nextPos = new Vector2(transform.position.x + moveAmount, transform.position.y);
+            directionStr = "Right";
         }
-        //**********************
-        //**********************
         else if (direction == 2) // Move left!
         {
             // Move Left!
             nextPos = new Vector2(transform.position.x - moveAmount, transform.position.y);
             directionStr = "Left";
-
-            // Check the roomsPositionList for not cutting the path
-            nextPos=this.CheckRoomPosition(nextPos);
-            directionCommandStr="Move "+directionStr;
-
-            //INSTANTIATE THE ROOME HERE BASED ON THE DIRECTION_LIST.COUNT-1 AND DIRECTION_STR
-            RoomGeneration();
-
-            transform.position = nextPos;
-            Debug.Log(directionCommandStr);
-            directionList.Add(directionStr);
-    
-            //Adding the instantiated room to the list of room position coordinates 
-            roomPositionsList.Add(nextPos);
         }
-
-        //**********************
-        //**********************
         else if (direction == 3) // Move Up!
         {
             // Move Up!
             nextPos = new Vector2(transform.position.x, transform.position.y + moveAmount);
             directionStr = "Up";
-
-            // Check the roomsPositionList for not cutting the path
-            nextPos=this.CheckRoomPosition(nextPos);
-            directionCommandStr="Move "+directionStr;
-
-            //INSTANTIATE THE ROOME HERE BASED ON THE DIRECTION_LIST.COUNT-1 AND DIRECTION_STR
-            RoomGeneration();
-
-            transform.position = nextPos;
-            Debug.Log(directionCommandStr);
-            directionList.Add(directionStr);
-
-            // Adding the instantiated room to the list of room position coordinates
-            roomPositionsList.Add(nextPos);
         }
-
-        //**********************
-        //**********************
         else if (direction == 4) // Move Down
         {
             // Move Down!
             nextPos = new Vector2(transform.position.x, transform.position.y - moveAmount);
             directionStr = "Down";
-
-            // Check the roomsPositionList for not cutting the path
-            nextPos=this.CheckRoomPosition(nextPos);
-            directionCommandStr="Move "+directionStr;
-
-            //INSTANTIATE THE ROOME HERE BASED ON THE DIRECTION_LIST.COUNT-1 AND DIRECTION_STR
-            RoomGeneration();
-
-            transform.position = nextPos;
-            Debug.Log(directionCommandStr);
-            directionList.Add(directionStr);
-
-            // Adding the instantiated room to the list of room position coordinates
-            roomPositionsList.Add(nextPos);
         }
-        
-        roomCounter++;
-
     }
 
     private Vector2 CheckRoomPosition(Vector2 nextPosition)
     {
         // if the position we moved into (nextPosition) exist in the list, change the direction
         while (roomPositionsList.Contains(nextPosition))
+        {
+            direction = Random.Range(1, 5);
+            if (direction == 1)
             {
-                direction = Random.Range(1, 5);
-                if (direction == 1)
-                {
-                    nextPosition = new Vector2(transform.position.x + moveAmount, transform.position.y);
-                    directionStr = "Right";
-                }
-                else if (direction == 2)
-                {
-                    nextPosition = new Vector2(transform.position.x - moveAmount, transform.position.y);
-                    directionStr = "Left";
-                }
-
-                else if (direction == 3)
-                {
-                    nextPosition = new Vector2(transform.position.x, transform.position.y + moveAmount);
-                    directionStr = "Up";
-                }
-                else
-                {
-                    nextPosition = new Vector2(transform.position.x, transform.position.y - moveAmount);
-                    directionStr = "Down";
-                }
+                nextPosition = new Vector2(transform.position.x + moveAmount, transform.position.y);
+                directionStr = "Right";
             }
+            else if (direction == 2)
+            {
+                nextPosition = new Vector2(transform.position.x - moveAmount, transform.position.y);
+                directionStr = "Left";
+            }
+
+            else if (direction == 3)
+            {
+                nextPosition = new Vector2(transform.position.x, transform.position.y + moveAmount);
+                directionStr = "Up";
+            }
+            else if (direction == 4)
+            {
+                nextPosition = new Vector2(transform.position.x, transform.position.y - moveAmount);
+                directionStr = "Down";
+            }
+        }
         return nextPosition;
     }
 
-    private void RoomGeneration()
+    private void GenerateRoom()
     {
-        if ((directionList[directionList.Count-1] == "Right") && (directionStr == "Right") || (directionList[directionList.Count-1] == "Left") && (directionStr == "Left"))
+        string previousDirection = directionList[directionList.Count - 1]; // Get the direction before the last move
+        string currentDirection = directionStr; // Get the current direction
+        
+        if ((previousDirection == "Right") && (currentDirection == "Right") || (previousDirection == "Left") && (currentDirection == "Left"))
             {
                 //Instantiate a room with Right-Left opening
                 Instantiate(rooms[4], transform.position, Quaternion.identity);
             }
-            else if ((directionList[directionList.Count-1] == "Up") && (directionStr == "Up") || (directionList[directionList.Count-1] == "Down") && (directionStr == "Down"))
+            else if ((previousDirection == "Up") && (currentDirection == "Up") || (previousDirection == "Down") && (currentDirection == "Down"))
             {
                 //Instantiate a room with Top-Bottom opening
                 Instantiate(rooms[9], transform.position, Quaternion.identity);  
             }
 
-
-            else if ((directionList[directionList.Count-1] == "Up") && (directionStr == "Right") || (directionList[directionList.Count-1] == "Left") && (directionStr == "Down"))
+            else if ((previousDirection == "Up") && (currentDirection == "Right") || (previousDirection == "Left") && (currentDirection == "Down"))
             {
                 //Instantiate a room with Right-Bottom opening
                 Instantiate(rooms[7], transform.position, Quaternion.identity); 
             }
-            else if ((directionList[directionList.Count-1] == "Right") && (directionStr == "Down") || (directionList[directionList.Count-1] == "Up") && (directionStr == "Left"))
+            else if ((previousDirection == "Right") && (currentDirection == "Down") || (previousDirection == "Up") && (currentDirection == "Left"))
             {
                 //Instantiate a room with Left-Bottom opening
                 Instantiate(rooms[5], transform.position, Quaternion.identity);  
             }
-            else if ((directionList[directionList.Count-1] == "Left") && (directionStr == "Up") || (directionList[directionList.Count-1] == "Down") && (directionStr == "Right"))
+            else if ((previousDirection == "Left") && (currentDirection == "Up") || (previousDirection == "Down") && (currentDirection == "Right"))
             {
                 //Instantiate a room with Right-Top opening
                 Instantiate(rooms[8], transform.position, Quaternion.identity);  
             }
-            else if ((directionList[directionList.Count-1] == "Down") && (directionStr == "Left") || (directionList[directionList.Count-1] == "Right") && (directionStr == "Up"))
+            else if ((previousDirection == "Down") && (currentDirection == "Left") || (previousDirection == "Right") && (currentDirection == "Up"))
             {
                 //Instantiate a room with Left-Top opening
                 Instantiate(rooms[6], transform.position, Quaternion.identity); 
             }
     }
 
-    private void FirstRoom()
-    {
-        //Instantiate the first room with only one opening based on the nextdirection 
-    }
-
-    private void LastRoom()
-    {
-        //Instantiate the final room with only one opening based on the previousdirection 
-         if (spawnedRoomsList.Count == 10)
-            {
-                Collider2D roomDetection = Physics2D.OverlapCircle(transform.position, 1, whatIsRoom);
-                roomDetection.GetComponent<Room>().RoomDestruction();
-                if (directionStr == "Right")
-                {
-                    Instantiate(rooms[0], transform.position, Quaternion.identity); 
-                }
-                else if (directionStr == "Left")
-                {
-                    Instantiate(rooms[1], transform.position, Quaternion.identity); 
-                }
-                else if (directionStr == "Up")
-                {
-                    Instantiate(rooms[2], transform.position, Quaternion.identity); 
-                }
-                else if (directionStr == "Down")
-                {
-                    Instantiate(rooms[3], transform.position, Quaternion.identity); 
-                }
-            }
-    }
-
-   
 }
